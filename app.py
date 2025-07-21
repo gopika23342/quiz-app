@@ -1,56 +1,68 @@
 from flask import Flask, render_template, request, jsonify, send_file
-import sqlite3
-import pandas as pd
+import sqlite3, pandas as pd, io
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
-# 🔧 Initialize database
-def init_db():
-    with sqlite3.connect('data.db') as con:
-        con.execute('''CREATE TABLE IF NOT EXISTS responses 
-                       (id INTEGER PRIMARY KEY, username TEXT, answers TEXT)''')
+# Questions list
+questions = [
+    {
+        "question": "Feedback & Evaluation Triggers",
+        "options": [
+            "Receiving feedback in public",
+            "No feedback for long periods",
+            "Feedback that feels personal, not professional",
+            "Being evaluated unfairly or inaccurately",
+            "Lack of follow-up after feedback is given"
+        ]
+    },
+    {
+        "question": "Autonomy & Control Triggers",
+        "options": [
+            "Tasks being reassigned without explanation",
+            "Not being trusted to make decisions",
+            "Strict rules with no flexibility",
+            "Constant check-ins or surveillance",
+            "Workload imposed without consultation"
+        ]
+    }
+]
 
-# 🏠 Home route
-@app.route("/", methods=["GET", "POST"])
-def home():
-    if request.method == "POST":
-        username = request.form["username"]
-        return render_template("drag_and_drop.html", username=username)
-    return render_template("index.html")
+@app.route("/")
+def index():
+    return render_template("drag_and_drop.html", username="User1", questions=questions)
 
-# 📥 Submit answers
 @app.route("/submit", methods=["POST"])
 def submit():
     data = request.get_json()
-    with sqlite3.connect("data.db") as con:
-        con.execute("INSERT INTO responses (username, answers) VALUES (?, ?)", 
-                    (data["username"], ', '.join(data["answers"])))
+    conn = sqlite3.connect("data.db")
+    cursor = conn.cursor()
+    cursor.execute("""CREATE TABLE IF NOT EXISTS responses (
+        username TEXT,
+        question_id INTEGER,
+        answer TEXT,
+        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )""")
+    for qid, ans_list in data["answers"].items():
+        qid_int = int(qid)
+        for ans in ans_list:
+            cursor.execute("INSERT INTO responses (username, question_id, answer) VALUES (?, ?, ?)",
+                           (data["username"], qid_int, ans))
+    conn.commit()
+    conn.close()
     return jsonify({"status": "success"})
 
-# 👀 Admin page to view responses
-@app.route("/admin")
-def admin():
-    with sqlite3.connect("data.db") as con:
-        rows = con.execute("SELECT username, answers FROM responses").fetchall()
-    return render_template("admin.html", data=rows)
-
-# 📤 Download responses as Excel
 @app.route("/download")
 def download():
-    with sqlite3.connect("data.db") as con:
-        df = pd.read_sql_query("SELECT username, answers FROM responses", con)
+    conn = sqlite3.connect("data.db")
+    df = pd.read_sql_query("SELECT * FROM responses", conn)
+    conn.close()
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name="Responses")
+    output.seek(0)
+    return send_file(output, download_name="quiz_responses.xlsx", as_attachment=True)
 
-    file_path = "responses.xlsx"
-    df.to_excel(file_path, index=False)
-
-    return send_file(
-        file_path,
-        as_attachment=True,
-        download_name="responses.xlsx",
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
-# ▶️ Run the app (🔄 host changed to allow network access)
 if __name__ == "__main__":
-    init_db()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(debug=True)
