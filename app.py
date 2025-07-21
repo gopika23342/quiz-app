@@ -1,14 +1,44 @@
-from flask import Flask, render_template, request, jsonify, send_file
-import sqlite3, pandas as pd, io
+from flask import Flask, render_template, request, send_file
 from flask_cors import CORS
+import pandas as pd
+import io
 
 app = Flask(__name__)
 CORS(app)
 
-# Questions list
 questions = [
     {
-        "question": "Feedback & Evaluation Triggers",
+        "question": "What triggers discomfort in communication for you?",
+        "options": [
+            "Being interrupted while speaking",
+            "Getting vague or unclear feedback",
+            "Emails or messages being ignored",
+            "Being talked over in meetings",
+            "Sarcasm or passive-aggressive tone"
+        ]
+    },
+    {
+        "question": "What triggers frustration around leadership and authority?",
+        "options": [
+            "Being micromanaged",
+            "Not being recognized for my contributions",
+            "Having no say in decisions that affect me",
+            "Inconsistent expectations from leadership",
+            "Receiving only criticism, no praise"
+        ]
+    },
+    {
+        "question": "What team dynamics tend to trigger you?",
+        "options": [
+            "Team members not meeting commitments",
+            "Feeling excluded from team activities",
+            "Dominating voices in group settings",
+            "Blame games after failures",
+            "Lack of team collaboration"
+        ]
+    },
+    {
+        "question": "What feedback and evaluation practices do you find triggering?",
         "options": [
             "Receiving feedback in public",
             "No feedback for long periods",
@@ -18,7 +48,7 @@ questions = [
         ]
     },
     {
-        "question": "Autonomy & Control Triggers",
+        "question": "What triggers discomfort in autonomy and control at work?",
         "options": [
             "Tasks being reassigned without explanation",
             "Not being trusted to make decisions",
@@ -26,43 +56,44 @@ questions = [
             "Constant check-ins or surveillance",
             "Workload imposed without consultation"
         ]
+    },
+    {
+        "question": "What situations around recognition and appreciation trigger you?",
+        "options": [
+            "Credit being given to someone else",
+            "Being overlooked for opportunities",
+            "No acknowledgment for extra effort",
+            "Praise given only to “favorites”",
+            "Recognition only after complaints"
+        ]
+    },
+    {
+        "question": "What fairness or equity issues do you find triggering?",
+        "options": [
+            "Unequal distribution of workload",
+            "Promotions without transparency",
+            "Double standards for different people",
+            "Being paid less than peers",
+            "Rules applied inconsistently"
+        ]
+    },
+    {
+        "question": "What identity and inclusion-related experiences do you find triggering?",
+        "options": [
+            "Assumptions made based on my background",
+            "Jokes or comments about identity",
+            "Being the only one of my kind in the room",
+            "Having to “code switch” to fit in",
+            "Feeling like I can’t speak freely"
+        ]
     }
 ]
 
-@app.route("/")
+@app.route('/')
 def index():
-    return render_template("drag_and_drop.html", username="User1", questions=questions)
+    return render_template("drag_and_drop.html", questions=questions)
 
-@app.route("/submit", methods=["POST"])
-def submit():
-    data = request.get_json()
-    conn = sqlite3.connect("data.db")
-    cursor = conn.cursor()
-    cursor.execute("""CREATE TABLE IF NOT EXISTS responses (
-        username TEXT,
-        question_id INTEGER,
-        answer TEXT,
-        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )""")
-    for qid, ans_list in data["answers"].items():
-        qid_int = int(qid)
-        for ans in ans_list:
-            cursor.execute("INSERT INTO responses (username, question_id, answer) VALUES (?, ?, ?)",
-                           (data["username"], qid_int, ans))
-    conn.commit()
-    conn.close()
-    return jsonify({"status": "success"})
+# Define /submit logic and /download_excel as needed
 
-@app.route("/download")
-def download():
-    conn = sqlite3.connect("data.db")
-    df = pd.read_sql_query("SELECT * FROM responses", conn)
-    conn.close()
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name="Responses")
-    output.seek(0)
-    return send_file(output, download_name="quiz_responses.xlsx", as_attachment=True)
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)

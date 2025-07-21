@@ -1,107 +1,77 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Multi Drag-and-Drop Quiz</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    .option {
-      background-color: #f1f1f1;
-      padding: 8px;
-      margin: 5px;
-      border: 2px dashed #ccc;
-      border-radius: 5px;
-      cursor: grab;
-    }
-    .dropzone {
-      min-height: 80px;
-      background-color: #fff8e1;
-      border: 2px dashed #ffa726;
-      padding: 10px;
-      border-radius: 8px;
-    }
-  </style>
-</head>
-<body class="bg-light">
-  <div class="container mt-4">
-    <div class="card p-4 shadow">
-      <h3 class="text-success">Hi, {{ username }}!</h3>
-
-      {% for q in questions %}
-        <div class="mb-4">
-          <h5><strong>Q{{ loop.index }}: {{ q.question }}</strong></h5>
-          <div class="row">
-            <div class="col-md-6">
-              <div class="d-flex flex-wrap">
-                {% for opt in q.options %}
-                  <div class="option" draggable="true" data-question="{{ loop.index }}">{{ opt }}</div>
-                {% endfor %}
-              </div>
-            </div>
-            <div class="col-md-6">
-              <h6>Drop your answers here 👇</h6>
-              <div class="dropzone" id="dropzone-{{ loop.index }}"></div>
-            </div>
-          </div>
-        </div>
-      {% endfor %}
-
-      <button onclick="submitAnswers()" class="btn btn-primary mt-3">Submit</button>
-    </div>
-  </div>
-
-  <script>
-    const options = document.querySelectorAll(".option");
-    const dropzones = document.querySelectorAll(".dropzone");
-
-    options.forEach(option => {
-      option.addEventListener("dragstart", e => {
-        e.dataTransfer.setData("text/plain", e.target.textContent);
-        e.dataTransfer.setData("question", option.dataset.question);
-      });
-    });
-
-    dropzones.forEach(dropzone => {
-      dropzone.addEventListener("dragover", e => e.preventDefault());
-
-      dropzone.addEventListener("drop", e => {
-        e.preventDefault();
-        const text = e.dataTransfer.getData("text/plain");
-        const qid = e.dataTransfer.getData("question");
-        const targetId = dropzone.id.split("-")[1];
-
-        if (qid === targetId) {
-          const droppedItem = document.createElement("div");
-          droppedItem.className = "option";
-          droppedItem.textContent = text;
-          dropzone.appendChild(droppedItem);
-        } else {
-          alert("Please drop in the correct question box!");
+    <title>Trigger Quiz - Drag and Drop</title>
+    <style>
+        .question-box {
+            border: 2px dashed #aaa;
+            padding: 10px;
+            margin: 20px 0;
+            min-height: 100px;
+            background-color: #f9f9f9;
         }
-      });
-    });
+        .draggable {
+            padding: 8px;
+            margin: 5px;
+            background-color: #d0ebff;
+            border: 1px solid #74c0fc;
+            cursor: move;
+        }
+        .dropzone {
+            padding: 10px;
+            border: 2px dashed #ccc;
+            min-height: 60px;
+            margin-top: 10px;
+        }
+        .question-title {
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Drag and Drop Your Triggers into Relevant Categories</h2>
 
-    function submitAnswers() {
-      const allAnswers = {};
-      dropzones.forEach(zone => {
-        const qid = zone.id.split("-")[1];
-        allAnswers[qid] = Array.from(zone.children).map(el => el.textContent);
-      });
+    <form action="/submit" method="post">
+        {% for idx, question in enumerate(questions) %}
+            <div class="question-box">
+                <div class="question-title">{{ question.question }}</div>
+                <div class="dropzone" ondrop="drop(event)" ondragover="allowDrop(event)" data-question-id="{{ idx }}"></div>
+            </div>
+        {% endfor %}
 
-      fetch("/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: "{{ username }}",
-          answers: allAnswers
-        })
-      }).then(res => {
-        const msg = document.createElement("div");
-        msg.className = "alert alert-success mt-3";
-        msg.textContent = "✅ Answers submitted!";
-        document.querySelector(".card").appendChild(msg);
-        setTimeout(() => msg.remove(), 3000);
-      });
-    }
-  </script>
+        <h3>Options:</h3>
+        <div id="options-pool">
+            {% for idx, question in enumerate(questions) %}
+                {% for option in question.options %}
+                    <div class="draggable" draggable="true" ondragstart="drag(event)" id="opt-{{ idx }}-{{ loop.index }}">
+                        {{ option }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        <br><br>
+        <button type="submit">Submit</button>
+    </form>
+
+    <script>
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            const data = ev.dataTransfer.getData("text");
+            const dragged = document.getElementById(data);
+            if (dragged && !ev.target.contains(dragged)) {
+                ev.target.appendChild(dragged);
+            }
+        }
+    </script>
 </body>
 </html>
