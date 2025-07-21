@@ -1,0 +1,20 @@
+body {
+  font-family: Arial;
+  padding: 20px;
+}
+.answers, #dropzone {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.option, #dropzone div {
+  padding: 10px;
+  border: 1px solid #aaa;
+  background-color: #f0f0f0;
+  cursor: grab;
+}
+#dropzone {
+  border: 2px dashed #666;
+  min-height: 50px;
+  padding: 10px;
+}

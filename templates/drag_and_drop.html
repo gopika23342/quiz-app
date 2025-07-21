@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Quiz</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .option {
+      background-color: #f1f1f1;
+      padding: 10px;
+      margin: 10px;
+      border: 2px dashed #ccc;
+      border-radius: 5px;
+      cursor: grab;
+    }
+    #dropzone {
+      min-height: 150px;
+      background-color: #fff8e1;
+      border: 2px dashed #ffa726;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container mt-4">
+    <div class="card p-4 shadow">
+      <h3 class="text-success">Hi, {{ username }}!</h3>
+      <p><strong>Question:</strong> What are programming languages?</p>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="d-flex flex-wrap">
+            <div class="option" draggable="true">Python</div>
+            <div class="option" draggable="true">HTML</div>
+            <div class="option" draggable="true">JavaScript</div>
+            <div class="option" draggable="true">Banana</div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <h5>Drop your answers here 👇</h5>
+          <div id="dropzone"></div>
+        </div>
+      </div>
+
+      <button onclick="submitAnswers()" class="btn btn-primary mt-3">Submit</button>
+    </div>
+  </div>
+
+  <script>
+    const options = document.querySelectorAll(".option");
+    const dropzone = document.getElementById("dropzone");
+
+    options.forEach(option => {
+      option.addEventListener("dragstart", e => {
+        e.dataTransfer.setData("text/plain", e.target.textContent);
+      });
+    });
+
+    dropzone.addEventListener("dragover", e => e.preventDefault());
+
+    dropzone.addEventListener("drop", e => {
+      e.preventDefault();
+      const data = e.dataTransfer.getData("text/plain");
+      const droppedItem = document.createElement("div");
+      droppedItem.textContent = data;
+      droppedItem.className = "option";
+      dropzone.appendChild(droppedItem);
+    });
+
+    function submitAnswers() {
+      const answers = Array.from(dropzone.children).map(el => el.textContent);
+      fetch("/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: "{{ username }}",
+          answers: answers
+        })
+      }).then(res => {
+  const message = document.createElement("div");
+  message.textContent = "✅ Answers submitted!";
+  message.className = "alert alert-success mt-3";
+  document.querySelector(".card").appendChild(message);
+
+  // Optional: fade out after 3 seconds
+  setTimeout(() => message.remove(), 3000);
+});
+
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+from flask import Flask, render_template, request, jsonify, send_file
+import sqlite3
+import pandas as pd
+
+app = Flask(__name__)
+
+# 🔧 Initialize database
+def init_db():
+    with sqlite3.connect('data.db') as con:
+        con.execute('''CREATE TABLE IF NOT EXISTS responses 
+                       (id INTEGER PRIMARY KEY, username TEXT, answers TEXT)''')
+
+# 🏠 Home route
+@app.route("/", methods=["GET", "POST"])
+def home():
+    if request.method == "POST":
+        username = request.form["username"]
+        return render_template("drag_and_drop.html", username=username)
+    return render_template("index.html")
+
+# 📥 Submit answers
+@app.route("/submit", methods=["POST"])
+def submit():
+    data = request.get_json()
+    with sqlite3.connect("data.db") as con:
+        con.execute("INSERT INTO responses (username, answers) VALUES (?, ?)", 
+                    (data["username"], ', '.join(data["answers"])))
+    return jsonify({"status": "success"})
+
+# 👀 Admin page to view responses
+@app.route("/admin")
+def admin():
+    with sqlite3.connect("data.db") as con:
+        rows = con.execute("SELECT username, answers FROM responses").fetchall()
+    return render_template("admin.html", data=rows)
+
+# ✅ Fixed: 📤 Download responses as Excel
+@app.route("/download")
+def download():
+    with sqlite3.connect("data.db") as con:
+        df = pd.read_sql_query("SELECT username, answers FROM responses", con)
+
+    file_path = "responses.xlsx"
+    df.to_excel(file_path, index=False)
+
+    return send_file(
+        file_path,
+        as_attachment=True,
+        download_name="responses.xlsx",  # ✅ this is important
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
+# ▶️ Run the app
+if __name__ == "__main__":
+    init_db()
+    app.run(debug=True)
