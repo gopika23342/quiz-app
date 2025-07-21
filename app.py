@@ -89,11 +89,37 @@ questions = [
     }
 ]
 
+# Store all responses in memory (or extend to DB later)
+responses = []
+
 @app.route('/')
 def index():
     return render_template("drag_and_drop.html", questions=questions)
 
-# Define /submit logic and /download_excel as needed
+@app.route('/submit', methods=['POST'])
+def submit():
+    data = request.form.to_dict(flat=False)
+    formatted = {}
+    for qid, answers in data.items():
+        formatted[qid] = answers  # list of selected answers
+    responses.append(formatted)
+    return "Submitted! <br><a href='/'>Back to quiz</a><br><a href='/download_excel'>Download Excel</a>"
+
+@app.route('/download_excel')
+def download_excel():
+    flat_data = []
+    for i, entry in enumerate(responses, start=1):
+        row = {'User': f'User {i}'}
+        for qidx, answers in entry.items():
+            row[f'Q{qidx}'] = ", ".join(answers)
+        flat_data.append(row)
+
+    df = pd.DataFrame(flat_data)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Responses')
+    output.seek(0)
+    return send_file(output, as_attachment=True, download_name='quiz_responses.xlsx', mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 if __name__ == '__main__':
     app.run(debug=True)

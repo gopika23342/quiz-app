@@ -1,77 +1,136 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Trigger Quiz - Drag and Drop</title>
+    <meta charset="UTF-8">
+    <title>Workplace Trigger Quiz</title>
     <style>
-        .question-box {
-            border: 2px dashed #aaa;
-            padding: 10px;
-            margin: 20px 0;
-            min-height: 100px;
-            background-color: #f9f9f9;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
         }
-        .draggable {
-            padding: 8px;
-            margin: 5px;
-            background-color: #d0ebff;
-            border: 1px solid #74c0fc;
-            cursor: move;
+        h2 {
+            color: #333;
         }
-        .dropzone {
-            padding: 10px;
-            border: 2px dashed #ccc;
+        .question-block {
+            margin-bottom: 40px;
+        }
+        .options, .dropzone {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
             min-height: 60px;
+            padding: 10px;
+            border: 2px dashed #aaa;
             margin-top: 10px;
         }
-        .question-title {
-            font-weight: bold;
-            margin-top: 20px;
+        .option {
+            background-color: #f2f2f2;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: grab;
+        }
+        .dropzone {
+            background-color: #e7f3ff;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
         }
     </style>
 </head>
 <body>
-    <h2>Drag and Drop Your Triggers into Relevant Categories</h2>
+    <h1>Workplace Triggers Quiz</h1>
 
-    <form action="/submit" method="post">
-        {% for idx, question in enumerate(questions) %}
-            <div class="question-box">
-                <div class="question-title">{{ question.question }}</div>
-                <div class="dropzone" ondrop="drop(event)" ondragover="allowDrop(event)" data-question-id="{{ idx }}"></div>
-            </div>
-        {% endfor %}
+    <form id="quizForm">
+        {% for q in questions %}
+        <div class="question-block" data-question="{{ q.question }}">
+            <h2>{{ loop.index }}. {{ q.question }}</h2>
 
-        <h3>Options:</h3>
-        <div id="options-pool">
-            {% for idx, question in enumerate(questions) %}
-                {% for option in question.options %}
-                    <div class="draggable" draggable="true" ondragstart="drag(event)" id="opt-{{ idx }}-{{ loop.index }}">
-                        {{ option }}
-                    </div>
+            <div class="options" id="options-{{ loop.index }}">
+                {% for opt in q.options %}
+                <div class="option" draggable="true">{{ opt }}</div>
                 {% endfor %}
-            {% endfor %}
-        </div>
+            </div>
 
-        <br><br>
+            <p><strong>Drop your selected triggers below (choose at least 3):</strong></p>
+            <div class="dropzone" id="dropzone-{{ loop.index }}"></div>
+        </div>
+        {% endfor %}
         <button type="submit">Submit</button>
     </form>
 
     <script>
-        function allowDrop(ev) {
-            ev.preventDefault();
-        }
+        const draggables = document.querySelectorAll(".option");
+        const dropzones = document.querySelectorAll(".dropzone");
 
-        function drag(ev) {
-            ev.dataTransfer.setData("text", ev.target.id);
-        }
+        draggables.forEach(draggable => {
+            draggable.addEventListener("dragstart", (e) => {
+                e.dataTransfer.setData("text/plain", e.target.innerText);
+                e.dataTransfer.effectAllowed = "move";
+            });
+        });
 
-        function drop(ev) {
-            ev.preventDefault();
-            const data = ev.dataTransfer.getData("text");
-            const dragged = document.getElementById(data);
-            if (dragged && !ev.target.contains(dragged)) {
-                ev.target.appendChild(dragged);
+        dropzones.forEach(zone => {
+            zone.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+            });
+
+            zone.addEventListener("drop", (e) => {
+                e.preventDefault();
+                const data = e.dataTransfer.getData("text/plain");
+
+                // Prevent duplicate drop
+                const existing = Array.from(zone.children).some(el => el.innerText === data);
+                if (!existing) {
+                    const newEl = document.createElement("div");
+                    newEl.className = "option";
+                    newEl.draggable = true;
+                    newEl.innerText = data;
+                    zone.appendChild(newEl);
+
+                    // Make the dropped one draggable again
+                    newEl.addEventListener("dragstart", (e) => {
+                        e.dataTransfer.setData("text/plain", e.target.innerText);
+                        e.dataTransfer.effectAllowed = "move";
+                    });
+                }
+            });
+        });
+
+        document.getElementById("quizForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            const data = {};
+            const questionBlocks = document.querySelectorAll(".question-block");
+
+            questionBlocks.forEach(block => {
+                const questionText = block.getAttribute("data-question");
+                const selected = Array.from(block.querySelector(".dropzone").children).map(opt => opt.innerText);
+                data[questionText] = selected;
+            });
+
+            const response = await fetch("/submit", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                alert("Responses submitted successfully!");
+            } else {
+                alert("Error submitting your responses.");
             }
-        }
+        });
     </script>
 </body>
 </html>
