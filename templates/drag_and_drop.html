@@ -1,64 +1,27 @@
 <script>
-    const draggables = document.querySelectorAll(".option");
-    const dropzones = document.querySelectorAll(".dropzone");
+    const username = "{{ username }}";
+    const form = document.getElementById("quizForm");
 
-    draggables.forEach(draggable => {
-        draggable.addEventListener("dragstart", (e) => {
-            e.dataTransfer.setData("text/plain", e.target.innerText);
-            e.dataTransfer.effectAllowed = "move";
-        });
-    });
-
-    dropzones.forEach(zone => {
-        zone.addEventListener("dragover", (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = "move";
-        });
-
-        zone.addEventListener("drop", (e) => {
-            e.preventDefault();
-            const data = e.dataTransfer.getData("text/plain");
-
-            const existing = Array.from(zone.children).some(el => el.innerText === data);
-            if (!existing) {
-                const newEl = document.createElement("div");
-                newEl.className = "option";
-                newEl.draggable = true;
-                newEl.innerText = data;
-                zone.appendChild(newEl);
-
-                newEl.addEventListener("dragstart", (e) => {
-                    e.dataTransfer.setData("text/plain", e.target.innerText);
-                    e.dataTransfer.effectAllowed = "move";
-                });
-            }
-        });
-    });
-
-    document.getElementById("quizForm").addEventListener("submit", async function(e) {
+    form.addEventListener("submit", function(e) {
         e.preventDefault();
 
-        const data = {};
-        const questionBlocks = document.querySelectorAll(".question-block");
+        const responses = {};
+        const formData = new FormData(form);
 
-        questionBlocks.forEach(block => {
-            const questionText = block.getAttribute("data-question");
-            const selected = Array.from(block.querySelector(".dropzone").children).map(opt => opt.innerText);
-            data[questionText] = selected;
-        });
-
-        const response = await fetch("/submit", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data)
-        });
-
-        if (response.ok) {
-            window.location.href = "/thank-you";  // Redirect after submission
-        } else {
-            alert("Error submitting your responses.");
+        for (let [key, value] of formData.entries()) {
+            if (!responses[key]) responses[key] = [];
+            responses[key].push(value);
         }
+
+        fetch("/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: username, responses: responses })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            window.location.href = "/thankyou";
+        });
     });
 </script>

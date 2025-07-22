@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify
 import pandas as pd
 from datetime import datetime
 import os
@@ -55,15 +55,35 @@ def submit():
         })
 
     df_new = pd.DataFrame(rows)
-    df_existing = pd.read_excel(EXCEL_FILE)
-    df_combined = pd.concat([df_existing, df_new], ignore_index=True)
+
+    if os.path.exists(EXCEL_FILE):
+        df_existing = pd.read_excel(EXCEL_FILE)
+        df_combined = pd.concat([df_existing, df_new], ignore_index=True)
+    else:
+        df_combined = df_new
+
     df_combined.to_excel(EXCEL_FILE, index=False)
 
-    return "Success"
+    return jsonify({"message": "Submitted successfully!"})
 
 @app.route("/thankyou")
 def thankyou():
     return render_template("thankyou.html")
+
+@app.route("/admin")
+def admin():
+    if os.path.exists(EXCEL_FILE):
+        df = pd.read_excel(EXCEL_FILE)
+        table_html = df.to_html(classes="table", index=False)
+    else:
+        table_html = "<p>No responses yet.</p>"
+    return render_template("admin.html", table=table_html)
+
+@app.route("/download")
+def download():
+    if os.path.exists(EXCEL_FILE):
+        return send_file(EXCEL_FILE, as_attachment=True)
+    return "No data available yet."
 
 if __name__ == "__main__":
     app.run(debug=True)
