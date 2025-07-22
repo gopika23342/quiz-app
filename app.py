@@ -2,10 +2,10 @@ from flask import Flask, render_template, request, redirect, url_for, send_file,
 import pandas as pd
 from datetime import datetime
 import os
+import random
 
 app = Flask(__name__)
 
-# Store responses in this file
 EXCEL_FILE = "responses.xlsx"
 
 # Sample questions
@@ -25,18 +25,11 @@ if not os.path.exists(EXCEL_FILE):
     df = pd.DataFrame(columns=["Name", "Question", "Answer", "Timestamp"])
     df.to_excel(EXCEL_FILE, index=False)
 
-@app.route("/", methods=["GET", "POST"])
-def index():
-    if request.method == "POST":
-        name = request.form.get("username")
-        if name:
-            return redirect(url_for("quiz", username=name))
-    return render_template("index.html")
-
-@app.route("/quiz/<username>")
-def quiz(username):
-    print(f"Rendering quiz for: {username}")  # Debug print
-    return render_template("drag_and_drop.html", questions=questions, username=username)
+@app.route("/")
+def quiz():
+    # Generate anonymous user ID (can be improved to track sessions later)
+    random_id = f"Anonymous-{random.randint(1000,9999)}"
+    return render_template("drag_and_drop.html", questions=questions, username=random_id)
 
 @app.route("/submit", methods=["POST"])
 def submit():

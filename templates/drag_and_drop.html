@@ -1,49 +1,49 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Quiz</title>
+  <title>Quiz</title>
 </head>
 <body>
-    <h2>Hello, {{ username }}!</h2>
-    <form id="quizForm">
-        {% for q in questions %}
-            <p><strong>{{ q.question }}</strong></p>
-            {% for opt in q.options %}
-                <label>
-                    <input type="checkbox" name="{{ q.question }}" value="{{ opt }}"> {{ opt }}
-                </label><br>
-            {% endfor %}
-        {% endfor %}
-        <br>
-        <button type="submit">Submit</button>
-    </form>
+  <h2>Welcome to the Workplace Trigger Quiz</h2>
+  <form id="quizForm">
+    {% for q in questions %}
+      <p><strong>{{ q.question }}</strong></p>
+      {% for opt in q.options %}
+        <label>
+          <input type="checkbox" name="{{ q.question }}" value="{{ opt }}"> {{ opt }}
+        </label><br>
+      {% endfor %}
+    {% endfor %}
+    <br>
+    <button type="submit">Submit</button>
+  </form>
 
-    <script>
-        const username = "{{ username }}";
-        const form = document.getElementById("quizForm");
+  <script>
+    const username = "{{ username }}";  // Automatically generated anonymous ID
+    const form = document.getElementById("quizForm");
 
-        form.addEventListener("submit", function(e) {
-            e.preventDefault();
+    form.addEventListener("submit", function(e) {
+      e.preventDefault();
 
-            const responses = {};
-            const formData = new FormData(form);
+      const responses = {};
+      const formData = new FormData(form);
 
-            for (let [key, value] of formData.entries()) {
-                if (!responses[key]) responses[key] = [];
-                responses[key].push(value);
-            }
+      for (let [key, value] of formData.entries()) {
+        if (!responses[key]) responses[key] = [];
+        responses[key].push(value);
+      }
 
-            fetch("/submit", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username: username, responses: responses })
-            })
-            .then(res => res.json())
-            .then(data => {
-                alert(data.message);
-                window.location.href = "/thankyou";
-            });
-        });
-    </script>
+      fetch("/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username, responses: responses })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message);
+        window.location.href = "/thankyou";
+      });
+    });
+  </script>
 </body>
 </html>

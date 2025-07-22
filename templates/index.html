@@ -2,10 +2,31 @@
 <html>
 <head>
   <title>Enter Your Name</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background-color: #f9f9f9;
+    }
+    form {
+      margin-top: 20px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      font-size: 16px;
+      width: 250px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-left: 10px;
+    }
+  </style>
 </head>
 <body>
-  <h1>Welcome to the Quiz</h1>
-  <form method="POST">
+  <h1>Welcome to the Workplace Trigger Quiz</h1>
+  <p>Please enter your name to begin.</p>
+  <form method="POST" action="/">
     <input type="text" name="username" placeholder="Enter your name" required />
     <button type="submit">Start Quiz</button>
   </form>
