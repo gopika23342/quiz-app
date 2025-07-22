@@ -35,6 +35,7 @@ def index():
 
 @app.route("/quiz/<username>")
 def quiz(username):
+    print(f"Rendering quiz for: {username}")  # Debug print
     return render_template("drag_and_drop.html", questions=questions, username=username)
 
 @app.route("/submit", methods=["POST"])
@@ -59,14 +60,17 @@ def submit():
 
     df_new = pd.DataFrame(rows)
 
-    # Append to Excel
-    if os.path.exists(EXCEL_FILE):
-        df_existing = pd.read_excel(EXCEL_FILE)
-        df_combined = pd.concat([df_existing, df_new], ignore_index=True)
-    else:
-        df_combined = df_new
+    try:
+        if os.path.exists(EXCEL_FILE):
+            df_existing = pd.read_excel(EXCEL_FILE)
+            df_combined = pd.concat([df_existing, df_new], ignore_index=True)
+        else:
+            df_combined = df_new
 
-    df_combined.to_excel(EXCEL_FILE, index=False)
+        df_combined.to_excel(EXCEL_FILE, index=False)
+    except Exception as e:
+        print(f"Error writing to Excel: {e}")
+        return jsonify({"message": "Error saving data"}), 500
 
     return jsonify({"message": "Submitted successfully!"})
 
@@ -76,11 +80,15 @@ def thankyou():
 
 @app.route("/admin")
 def admin():
-    if os.path.exists(EXCEL_FILE):
-        df = pd.read_excel(EXCEL_FILE)
-        table_html = df.to_html(classes="table table-striped", index=False)
-    else:
-        table_html = "<p>No responses yet.</p>"
+    try:
+        if os.path.exists(EXCEL_FILE):
+            df = pd.read_excel(EXCEL_FILE)
+            table_html = df.to_html(classes="table table-striped", index=False)
+        else:
+            table_html = "<p>No responses yet.</p>"
+    except Exception as e:
+        table_html = f"<p>Error loading responses: {e}</p>"
+
     return render_template("admin.html", table=table_html)
 
 @app.route("/download")
