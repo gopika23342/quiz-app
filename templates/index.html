@@ -1,15 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Enter Your Name</title>
-</head>
-<body>
-    <h1>Welcome to the Workplace Trigger Quiz</h1>
-    <form method="post">
-        <label for="username">Please enter your name:</label>
-        <input type="text" id="username" name="username" required>
-        <button type="submit">Start Quiz</button>
-    </form>
-</body>
-</html>
+<form method="post">
+  {% for q in questions %}
+    <h3>{{ loop.index }}. {{ q.question }}</h3>
+    <ul>
+      {% for opt in q.options %}
+        <li>{{ opt }}</li>
+      {% endfor %}
+    </ul>
+  {% endfor %}
+</form>
