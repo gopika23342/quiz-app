@@ -43,6 +43,9 @@ def submit():
     username = data.get("username")
     responses = data.get("responses")
 
+    if not username or not responses:
+        return jsonify({"message": "Missing data"}), 400
+
     rows = []
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -56,6 +59,7 @@ def submit():
 
     df_new = pd.DataFrame(rows)
 
+    # Append to Excel
     if os.path.exists(EXCEL_FILE):
         df_existing = pd.read_excel(EXCEL_FILE)
         df_combined = pd.concat([df_existing, df_new], ignore_index=True)
@@ -74,7 +78,7 @@ def thankyou():
 def admin():
     if os.path.exists(EXCEL_FILE):
         df = pd.read_excel(EXCEL_FILE)
-        table_html = df.to_html(classes="table", index=False)
+        table_html = df.to_html(classes="table table-striped", index=False)
     else:
         table_html = "<p>No responses yet.</p>"
     return render_template("admin.html", table=table_html)

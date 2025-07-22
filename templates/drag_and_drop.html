@@ -1,27 +1,92 @@
-<script>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Drag and Drop Quiz for {{ username }}</title>
+  <style>
+    .question-container {
+      margin-bottom: 20px;
+    }
+    .option {
+      padding: 10px;
+      margin: 5px;
+      background-color: #f2f2f2;
+      border: 1px solid #ccc;
+      width: fit-content;
+      cursor: move;
+    }
+    .dropzone {
+      border: 2px dashed #aaa;
+      min-height: 40px;
+      padding: 10px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Welcome, {{ username }}</h2>
+
+  <form id="quizForm">
+    {% for q in questions %}
+    <div class="question-container" data-question="{{ q.question }}">
+      <p><strong>{{ q.question }}</strong></p>
+
+      <div>
+        {% for opt in q.options %}
+          <div class="option" draggable="true" ondragstart="drag(event)" id="opt_{{ loop.index }}_{{ loop.parent.loop.index }}">{{ opt }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="dropzone" ondragover="allowDrop(event)" ondrop="drop(event)" data-question="{{ q.question }}">
+        Drop your answer here
+      </div>
+    </div>
+    <hr>
+    {% endfor %}
+    <button type="submit">Submit</button>
+  </form>
+
+  <script>
     const username = "{{ username }}";
-    const form = document.getElementById("quizForm");
 
-    form.addEventListener("submit", function(e) {
-        e.preventDefault();
+    function allowDrop(ev) {
+      ev.preventDefault();
+    }
 
-        const responses = {};
-        const formData = new FormData(form);
+    function drag(ev) {
+      ev.dataTransfer.setData("text", ev.target.id);
+    }
 
-        for (let [key, value] of formData.entries()) {
-            if (!responses[key]) responses[key] = [];
-            responses[key].push(value);
-        }
+    function drop(ev) {
+      ev.preventDefault();
+      const data = ev.dataTransfer.getData("text");
+      const draggedElement = document.getElementById(data);
+      ev.target.innerHTML = "";
+      ev.target.appendChild(draggedElement);
+    }
 
-        fetch("/submit", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: username, responses: responses })
-        })
-        .then(res => res.json())
-        .then(data => {
-            alert(data.message);
-            window.location.href = "/thankyou";
-        });
+    document.getElementById("quizForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const responses = {};
+      const dropzones = document.querySelectorAll(".dropzone");
+
+      dropzones.forEach(zone => {
+        const question = zone.getAttribute("data-question");
+        const answer = zone.textContent.trim();
+        responses[question] = answer;
+      });
+
+      fetch("/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username, responses: responses })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message || "Quiz submitted!");
+        window.location.href = "/thankyou";
+      });
     });
-</script>
+  </script>
+</body>
+</html>
