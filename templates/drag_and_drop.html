@@ -1,136 +1,64 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Workplace Trigger Quiz</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        h2 {
-            color: #333;
-        }
-        .question-block {
-            margin-bottom: 40px;
-        }
-        .options, .dropzone {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            min-height: 60px;
-            padding: 10px;
-            border: 2px dashed #aaa;
-            margin-top: 10px;
-        }
-        .option {
-            background-color: #f2f2f2;
-            padding: 8px 12px;
-            border-radius: 5px;
-            cursor: grab;
-        }
-        .dropzone {
-            background-color: #e7f3ff;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #45a049;
-        }
-    </style>
-</head>
-<body>
-    <h1>Workplace Triggers Quiz</h1>
+<script>
+    const draggables = document.querySelectorAll(".option");
+    const dropzones = document.querySelectorAll(".dropzone");
 
-    <form id="quizForm">
-        {% for q in questions %}
-        <div class="question-block" data-question="{{ q.question }}">
-            <h2>{{ loop.index }}. {{ q.question }}</h2>
-
-            <div class="options" id="options-{{ loop.index }}">
-                {% for opt in q.options %}
-                <div class="option" draggable="true">{{ opt }}</div>
-                {% endfor %}
-            </div>
-
-            <p><strong>Drop your selected triggers below (choose at least 3):</strong></p>
-            <div class="dropzone" id="dropzone-{{ loop.index }}"></div>
-        </div>
-        {% endfor %}
-        <button type="submit">Submit</button>
-    </form>
-
-    <script>
-        const draggables = document.querySelectorAll(".option");
-        const dropzones = document.querySelectorAll(".dropzone");
-
-        draggables.forEach(draggable => {
-            draggable.addEventListener("dragstart", (e) => {
-                e.dataTransfer.setData("text/plain", e.target.innerText);
-                e.dataTransfer.effectAllowed = "move";
-            });
+    draggables.forEach(draggable => {
+        draggable.addEventListener("dragstart", (e) => {
+            e.dataTransfer.setData("text/plain", e.target.innerText);
+            e.dataTransfer.effectAllowed = "move";
         });
+    });
 
-        dropzones.forEach(zone => {
-            zone.addEventListener("dragover", (e) => {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = "move";
-            });
-
-            zone.addEventListener("drop", (e) => {
-                e.preventDefault();
-                const data = e.dataTransfer.getData("text/plain");
-
-                // Prevent duplicate drop
-                const existing = Array.from(zone.children).some(el => el.innerText === data);
-                if (!existing) {
-                    const newEl = document.createElement("div");
-                    newEl.className = "option";
-                    newEl.draggable = true;
-                    newEl.innerText = data;
-                    zone.appendChild(newEl);
-
-                    // Make the dropped one draggable again
-                    newEl.addEventListener("dragstart", (e) => {
-                        e.dataTransfer.setData("text/plain", e.target.innerText);
-                        e.dataTransfer.effectAllowed = "move";
-                    });
-                }
-            });
-        });
-
-        document.getElementById("quizForm").addEventListener("submit", async function(e) {
+    dropzones.forEach(zone => {
+        zone.addEventListener("dragover", (e) => {
             e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+        });
 
-            const data = {};
-            const questionBlocks = document.querySelectorAll(".question-block");
+        zone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            const data = e.dataTransfer.getData("text/plain");
 
-            questionBlocks.forEach(block => {
-                const questionText = block.getAttribute("data-question");
-                const selected = Array.from(block.querySelector(".dropzone").children).map(opt => opt.innerText);
-                data[questionText] = selected;
-            });
+            const existing = Array.from(zone.children).some(el => el.innerText === data);
+            if (!existing) {
+                const newEl = document.createElement("div");
+                newEl.className = "option";
+                newEl.draggable = true;
+                newEl.innerText = data;
+                zone.appendChild(newEl);
 
-            const response = await fetch("/submit", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(data)
-            });
-
-            if (response.ok) {
-                alert("Responses submitted successfully!");
-            } else {
-                alert("Error submitting your responses.");
+                newEl.addEventListener("dragstart", (e) => {
+                    e.dataTransfer.setData("text/plain", e.target.innerText);
+                    e.dataTransfer.effectAllowed = "move";
+                });
             }
         });
-    </script>
-</body>
-</html>
+    });
+
+    document.getElementById("quizForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+
+        const data = {};
+        const questionBlocks = document.querySelectorAll(".question-block");
+
+        questionBlocks.forEach(block => {
+            const questionText = block.getAttribute("data-question");
+            const selected = Array.from(block.querySelector(".dropzone").children).map(opt => opt.innerText);
+            data[questionText] = selected;
+        });
+
+        const response = await fetch("/submit", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            window.location.href = "/thank-you";  // Redirect after submission
+        } else {
+            alert("Error submitting your responses.");
+        }
+    });
+</script>

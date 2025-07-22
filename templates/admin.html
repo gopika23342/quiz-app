@@ -13,7 +13,7 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     .table-responsive {
-      max-height: 400px;
+      max-height: 500px;
       overflow-y: auto;
     }
     .header-title {
@@ -24,6 +24,9 @@
     .refresh-badge {
       font-size: 0.85rem;
       color: gray;
+    }
+    .answers-cell ul {
+      padding-left: 18px;
     }
   </style>
 </head>
@@ -36,22 +39,19 @@
           <h2 class="header-title">📊 Admin Dashboard</h2>
           <span class="refresh-badge">Live user responses (auto-refresh every 5s)</span>
         </div>
-        <a href="#" class="btn btn-success" onclick="downloadExcel()">⬇️ Download Excel</a>
+        <a href="/download" class="btn btn-success">⬇️ Download Excel</a>
       </div>
 
-      <!-- Loading Spinner -->
       <div id="spinner" class="text-center mb-3" style="display:none;">
         <div class="spinner-border text-secondary" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
       </div>
 
-      <!-- Search Bar -->
       <div class="mb-3">
-        <input type="text" id="searchInput" class="form-control" placeholder="Search by name...">
+        <input type="text" id="searchInput" class="form-control" placeholder="Search by user name...">
       </div>
 
-      <!-- Data Table -->
       <div class="table-responsive">
         <table class="table table-striped" id="responseTable">
           <thead class="table-dark">
@@ -61,10 +61,22 @@
             </tr>
           </thead>
           <tbody>
-            {% for row in data %}
+            {% for user in data %}
             <tr>
-              <td>{{ row[0] }}</td>
-              <td>{{ row[1] }}</td>
+              <td>{{ user.name }}</td>
+              <td class="answers-cell">
+                <ul>
+                  {% for question, answers in user.answers.items() %}
+                    <li><strong>{{ question }}:</strong>
+                      <ul>
+                        {% for ans in answers %}
+                          <li>{{ ans }}</li>
+                        {% endfor %}
+                      </ul>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </td>
             </tr>
             {% endfor %}
           </tbody>
@@ -73,7 +85,6 @@
     </div>
   </div>
 
-  <!-- Scripts -->
   <script>
     function filterTable() {
       const value = document.getElementById("searchInput").value.toLowerCase();
@@ -86,28 +97,20 @@
 
     document.getElementById("searchInput").addEventListener("keyup", filterTable);
 
-    function downloadExcel() {
-      const a = document.createElement('a');
-      a.href = '/download';
-      a.download = 'responses.xlsx';
-      a.click();
-    }
-
     // Auto refresh every 5 seconds
     setInterval(() => {
       document.getElementById("spinner").style.display = "block";
       fetch(window.location.href)
-        .then(response => response.text())
+        .then(res => res.text())
         .then(html => {
           const parser = new DOMParser();
           const doc = parser.parseFromString(html, "text/html");
-          const newTbody = doc.querySelector("#responseTable tbody");
-          document.querySelector("#responseTable tbody").innerHTML = newTbody.innerHTML;
-          filterTable(); // reapply search
+          const newBody = doc.querySelector("#responseTable tbody");
+          document.querySelector("#responseTable tbody").innerHTML = newBody.innerHTML;
+          filterTable();
           document.getElementById("spinner").style.display = "none";
         });
     }, 5000);
   </script>
-
 </body>
 </html>
