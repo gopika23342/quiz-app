@@ -2,23 +2,69 @@
 <html>
 <head>
   <title>Quiz</title>
+  <style>
+    .question-block {
+      margin-bottom: 30px;
+    }
+    .option {
+      display: inline-block;
+      margin: 5px;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+      cursor: grab;
+    }
+    .dropzone {
+      min-height: 100px;
+      border: 2px dashed #888;
+      padding: 10px;
+      margin-top: 10px;
+      background-color: #f9f9f9;
+    }
+    .dropzone .option {
+      background-color: #d1ffd1;
+    }
+  </style>
 </head>
 <body>
   <h2>Welcome to the Workplace Trigger Quiz</h2>
   <form id="quizForm">
     {% for q in questions %}
-      <p><strong>{{ q.question }}</strong></p>
-      {% for opt in q.options %}
-        <label>
-          <input type="checkbox" name="{{ q.question }}" value="{{ opt }}"> {{ opt }}
-        </label><br>
-      {% endfor %}
+      <div class="question-block" data-question="{{ q.question }}">
+        <p><strong>{{ q.question }}</strong></p>
+        
+        <!-- Draggable Options -->
+        <div class="options-container">
+          {% for opt in q.options %}
+            <div class="option" draggable="true">{{ opt }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Dropzone -->
+        <div class="dropzone" ondragover="event.preventDefault()" ondrop="drop(event, this)"></div>
+      </div>
     {% endfor %}
     <br>
     <button type="submit">Submit</button>
   </form>
 
   <script>
+    let dragged = null;
+
+    // Make all options draggable
+    document.addEventListener('dragstart', function (e) {
+      if (e.target.classList.contains('option')) {
+        dragged = e.target;
+      }
+    });
+
+    function drop(event, dropzone) {
+      event.preventDefault();
+      if (dragged && !dropzone.contains(dragged)) {
+        dropzone.appendChild(dragged);
+      }
+    }
+
     const username = "{{ username }}";  // Automatically generated anonymous ID
     const form = document.getElementById("quizForm");
 
@@ -26,13 +72,21 @@
       e.preventDefault();
 
       const responses = {};
-      const formData = new FormData(form);
+      const blocks = document.querySelectorAll(".question-block");
 
-      for (let [key, value] of formData.entries()) {
-        if (!responses[key]) responses[key] = [];
-        responses[key].push(value);
+      for (const block of blocks) {
+        const question = block.getAttribute("data-question");
+        const selectedOptions = Array.from(block.querySelectorAll(".dropzone .option")).map(el => el.textContent.trim());
+
+        if (selectedOptions.length < 2) {
+          alert(`Please select at least 2 options for: ${question}`);
+          return;  // prevent submission
+        }
+
+        responses[question] = selectedOptions;
       }
 
+      // Submit to backend
       fetch("/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -41,8 +95,11 @@
       .then(res => res.json())
       .then(data => {
         alert(data.message);
-        window.location.href = "/thankyou";
-      });
+        if (data.message.toLowerCase().includes("success")) {
+          window.location.href = "/thankyou";
+        }
+      })
+      .catch(err => alert("Error submitting quiz"));
     });
   </script>
 </body>

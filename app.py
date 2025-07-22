@@ -11,12 +11,84 @@ EXCEL_FILE = "responses.xlsx"
 # Sample questions
 questions = [
     {
-        "question": "What situations make you feel stressed at work?",
-        "options": ["Tight deadlines", "Conflicts", "Lack of support", "Unclear tasks", "Multitasking"]
+        "question": "Communication Triggers",
+        "options": [
+            "Being interrupted while speaking",
+            "Getting vague or unclear feedback",
+            "Emails or messages being ignored",
+            "Being talked over in meetings",
+            "Sarcasm or passive-aggressive tone"
+        ]
     },
     {
-        "question": "Which behaviors affect your focus?",
-        "options": ["Noise", "Interruptions", "Micromanagement", "Meetings", "Notifications"]
+        "question": "Leadership & Authority Triggers",
+        "options": [
+            "Being micromanaged",
+            "Not being recognized for my contributions",
+            "Having no say in decisions that affect me",
+            "Inconsistent expectations from leadership",
+            "Receiving only criticism, no praise"
+        ]
+    },
+    {
+        "question": "Team Dynamics Triggers",
+        "options": [
+            "Team members not meeting commitments",
+            "Feeling excluded from team activities",
+            "Dominating voices in group settings",
+            "Blame games after failures",
+            "Lack of team collaboration"
+        ]
+    },
+    {
+        "question": "Feedback & Evaluation Triggers",
+        "options": [
+            "Receiving feedback in public",
+            "No feedback for long periods",
+            "Feedback that feels personal, not professional",
+            "Being evaluated unfairly or inaccurately",
+            "Lack of follow-up after feedback is given"
+        ]
+    },
+    {
+        "question": "Autonomy & Control Triggers",
+        "options": [
+            "Tasks being reassigned without explanation",
+            "Not being trusted to make decisions",
+            "Strict rules with no flexibility",
+            "Constant check-ins or surveillance",
+            "Workload imposed without consultation"
+        ]
+    },
+    {
+        "question": "Recognition & Appreciation Triggers",
+        "options": [
+            "Credit being given to someone else",
+            "Being overlooked for opportunities",
+            "No acknowledgment for extra effort",
+            "Praise given only to “favorites”",
+            "Recognition only after complaints"
+        ]
+    },
+    {
+        "question": "Fairness & Equity Triggers",
+        "options": [
+            "Unequal distribution of workload",
+            "Promotions without transparency",
+            "Double standards for different people",
+            "Being paid less than peers",
+            "Rules applied inconsistently"
+        ]
+    },
+    {
+        "question": "Identity & Inclusion Triggers",
+        "options": [
+            "Assumptions made based on my background",
+            "Jokes or comments about identity",
+            "Being the only one of my kind in the room",
+            "Having to “code switch” to fit in",
+            "Feeling like I can’t speak freely"
+        ]
     }
 ]
 
